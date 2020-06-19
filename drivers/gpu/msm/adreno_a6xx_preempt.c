@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #include "adreno.h"
@@ -145,7 +145,7 @@ static void _a6xx_preemption_fault(struct adreno_device *adreno_dev)
 	if (kgsl_state_is_awake(device)) {
 		adreno_readreg(adreno_dev, ADRENO_REG_CP_PREEMPT, &status);
 
-		if (status == 0) {
+		if (!(status & 0x1)) {
 			adreno_set_preempt_state(adreno_dev,
 				ADRENO_PREEMPT_COMPLETE);
 
@@ -155,7 +155,7 @@ static void _a6xx_preemption_fault(struct adreno_device *adreno_dev)
 	}
 
 	dev_err(device->dev,
-		     "Preemption timed out: cur=%d R/W=%X/%X, next=%d R/W=%X/%X\n",
+		     "Preemption Fault: cur=%d R/W=0x%x/0x%x, next=%d R/W=0x%x/0x%x\n",
 		     adreno_dev->cur_rb->id,
 		     adreno_get_rptr(adreno_dev->cur_rb),
 		     adreno_dev->cur_rb->wptr,
@@ -771,7 +771,7 @@ void a6xx_preemption_context_destroy(struct kgsl_context *context)
 	gpumem_free_entry(context->user_ctxt_record);
 
 	/* Put the extra ref from gpumem_alloc_entry() */
-	kgsl_mem_entry_put(context->user_ctxt_record);
+	kgsl_mem_entry_put_deferred(context->user_ctxt_record);
 }
 
 int a6xx_preemption_context_init(struct kgsl_context *context)
